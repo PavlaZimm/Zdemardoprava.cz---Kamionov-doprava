@@ -1,12 +1,10 @@
 
 
-
-
-
-
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useMutation } from 'convex/react'
+import { api } from '@/convex/_generated/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,8 +12,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Route, Calculator as CalcIcon } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 
 export function Calculator() {
+  const { toast } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  const submitOrder = useMutation(api.orders.submitOrder)
   const [fromLocation, setFromLocation] = useState('')
   const [toLocation, setToLocation] = useState('')
   const [fromCoordinates, setFromCoordinates] = useState<{ lat: number; lng: number } | null>(null)
@@ -695,26 +698,76 @@ export function Calculator() {
               </div>
             )}
           </div>
-          <Button onClick={() => {
-            const orderData = {
-              fromLocation,
-              toLocation,
-              distance,
-              cargoType,
-              vehicleType,
-              fullTruckType,
-              pickupDate,
-              firstName,
-              lastName,
-              companyName,
-              phone,
-              email,
-              address
+          <Button onClick={async () => {
+            if (!fromLocation || !toLocation || (!cargoType && !vehicleType && !fullTruckType) || !firstName || !lastName || !phone || !email || !address) {
+              toast({
+                title: "Chyba",
+                description: "Prosím vyplňte všechna povinná pole",
+                variant: "destructive",
+              })
+              return
             }
-            console.log('Order submitted:', orderData)
-            // Here you would send to backend
-          }} className="w-full bg-accent hover:bg-accent/90 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
-            Odeslat
+
+            setIsSubmitting(true)
+
+            try {
+              await submitOrder({
+                fromLocation,
+                toLocation,
+                distance: distance || undefined,
+                duration: duration || undefined,
+                cargoType,
+                vehicleType,
+                fullTruckType,
+                pickupDate,
+                firstName,
+                lastName,
+                companyName,
+                phone,
+                email,
+                address,
+                finalPrice
+              })
+
+              console.log('Order submitted successfully')
+              setIsSubmitted(true)
+              toast({
+                title: "Objednávka odeslána!",
+                description: "Brzy vás budeme kontaktovat s potvrzením a dalšími detaily.",
+              })
+
+              // Reset form after successful submission
+              setFromLocation('')
+              setToLocation('')
+              setFromCoordinates(null)
+              setToCoordinates(null)
+              setDistance(null)
+              setDuration(null)
+              setCargoType('')
+              setVehicleType('')
+              setFullTruckType('')
+              setPickupDate('')
+              setFirstName('')
+              setLastName('')
+              setCompanyName('')
+              setPhone('')
+              setEmail('')
+              setAddress('')
+            } catch (error) {
+              console.error('Error submitting order:', error)
+              toast({
+                title: "Chyba při odesílání",
+                description: "Nepodařilo se odeslat objednávku. Zkuste to prosím znovu.",
+                variant: "destructive",
+              })
+            } finally {
+              setIsSubmitting(false)
+            }
+          }} 
+            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-4 px-8 rounded-lg text-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!fromLocation || !toLocation || (!cargoType && !vehicleType && !fullTruckType) || !firstName || !lastName || !phone || !email || !address || isSubmitting}
+          >
+            {isSubmitting ? 'Odesílám...' : finalPrice > 0 ? `Objednat za ${finalPrice.toLocaleString('cs-CZ')} Kč` : 'Objednat přepravu'}
           </Button>
           <p className="text-xs text-gray-500 text-center mt-4">
             Odesláním objednávky souhlasíte s obchodními podmínkami a podmínkami pro ochranu osobních údajů
@@ -724,6 +777,9 @@ export function Calculator() {
     </div>
   )
 }
+
+
+
 
 
 
