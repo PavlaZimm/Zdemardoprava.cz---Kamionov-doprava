@@ -1,0 +1,43 @@
+{
+  "/": {
+    "title": "Kamionová doprava po celé Evropě | Zdemardoprava.cz",
+    "description": "Profesionální kamionová doprava a přeprava nákladů po celé Evropě. Kalkulátor cen online, rychlé nabídky, spolehlivé služby. Kontakt: 739 028 028",
+    "keywords": "kamionová doprava, přeprava nákladů, doprava po Evropě, kalkulátor dopravy, nákladní doprava, logistika, přepravní služby, kamion, nákladní vozidla",
+    "openGraph": {
+      "title": "Kamionová doprava po celé Evropě | Zdemardoprava.cz",
+      "description": "Profesionální kamionová doprava a přeprava nákladů po celé Evropě. Kalkulátor cen online, rychlé nabídky, spolehlivé služby.",
+      "type": "website",
+      "locale": "cs_CZ",
+      "siteName": "Zdemardoprava.cz",
+      "images": [
+        {
+          "url": "https://assets.macaly-user-data.dev/wdlcbbeq5qohf2tih2zarfwh/qa5wlbmt85y3dons2lotc9s7/w-mpW0sQB1uJGKQWpaVfj/tmpixd48hop.jpg",
+          "width": 1200,
+          "height": 630,
+          "alt": "Kamionová doprava - modrý kamion Volvo"
+        }
+      ]
+    },
+    "twitter": {
+      "card": "summary_large_image",
+      "title": "Kamionová doprava po celé Evropě | Zdemardoprava.cz",
+      "description": "Profesionální kamionová doprava a přeprava nákladů po celé Evropě. Kalkulátor cen online, rychlé nabídky, spolehlivé služby.",
+      "images": ["https://assets.macaly-user-data.dev/wdlcbbeq5qohf2tih2zarfwh/qa5wlbmt85y3dons2lotc9s7/w-mpW0sQB1uJGKQWpaVfj/tmpixd48hop.jpg"]
+    },
+    "robots": {
+      "index": true,
+      "follow": true,
+      "googleBot": {
+        "index": true,
+        "follow": true,
+        "noimageindex": false,
+        "maxVideoPreview": -1,
+        "maxImagePreview": "large",
+        "maxSnippet": -1
+      }
+    },
+    "alternates": {
+      "canonical": "https://zdemardoprava.cz"
+    }
+  }
+}
