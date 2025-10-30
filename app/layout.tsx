@@ -30,9 +30,6 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  verification: {
-    google: 'google-site-verification-code-here',
-  },
   category: 'transportation',
 }
 

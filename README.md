@@ -62,11 +62,18 @@ Profesionální website pro kamionovou dopravu s interaktivním kalkulátorem ce
 - `app/sitemap.ts` - automaticky generovaná sitemap
 - `app/robots.ts` - pravidla pro vyhledávací roboty
 
-### Nastavení Google Maps
-Pro plnou funkcionalitu map je potřeba nastavit:
-```
+### Nastavení prostředí
+Pro plnou funkcionalitu je potřeba nastavit tyto proměnné:
+
+```env
+# Google Maps API Key
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
+
+# Convex Database URL
+NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
 ```
+
+Viz `.env.example` pro kompletní seznam proměnných.
 
 ## Design
 - **Barvy**: Modrá (#39a1e6) jako hlavní barva
@@ -74,10 +81,32 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
 - **Layout**: Čistý, profesionální design
 - **Obrázky**: Vlastní AI generovaný kamion s logem
 
+## 🚀 Deployment na GitHub Pages
+
+Projekt je nakonfigurovaný pro automatický deploy na GitHub Pages.
+
+### Kroky pro nastavení:
+
+1. **Přejděte do Settings vašeho GitHub repository**
+2. **Jděte do sekce "Pages"** (v levém menu)
+3. **V Source vyberte "GitHub Actions"**
+4. **Přidejte Secrets** (Settings → Secrets and variables → Actions):
+   - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - váš Google Maps API klíč
+   - `NEXT_PUBLIC_CONVEX_URL` - URL vaší Convex databáze
+
+5. **Pushnete do main branch** a deployment se spustí automaticky
+
+### Lokální build:
+```bash
+npm run build  # Vytvoří statický export v ./out složce
+```
+
 ## Další kroky
 - [x] Implementace skutečné kalkulace vzdálenosti mezi body
 - [x] Optimalizace SEO metadat
-- [ ] Uložení objednávek do databáze
+- [x] Uložení objednávek do databáze
+- [x] Mobilní responzivní navigace
+- [x] GitHub Pages deployment konfigurace
 - [ ] Email notifikace pro nové objednávky
 - [ ] Admin panel pro správu objednávek
 
