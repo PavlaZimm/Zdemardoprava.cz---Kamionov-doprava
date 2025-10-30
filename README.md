@@ -5,31 +5,33 @@
 
 Profesionální website pro kamionovou dopravu s interaktivním kalkulátorem cen a výběrem tras na mapě.
 
+**🌐 Live Demo:** https://pavlazimm.github.io/Zdemardoprava.cz---Kamionov-doprava/
+
 ## Funkce
 
 ### ✅ Hotové funkce
 - **Hero sekce** s pozadím modrého kamionu Volvo
 - **Interaktivní kalkulátor** s výběrem typu nákladu a vozidla
-- **Výběr míst na mapě** - Google Maps integrace s autocomplete
+- **Geocoding a routing** - OpenStreetMap (Nominatim + OSRM) - ZDARMA
 - **Cenové kalkulace** včetně DPH a vzdálenostních příplatků
 - **Responzivní design** optimalizovaný pro mobily
 - **Sekce služeb** a testimonials
 - **Kontaktní informace** v patičce
 - **Kompletní SEO optimalizace** - metadata, structured data, sitemap
 
-### 🗺️ Mapa a trasy
-- **MapLocationPicker komponenta** - interaktivní výběr míst
-- **Google Maps API** integrace s autocomplete
-- **Vyhledávání adres** v České republice a okolních zemích
-- **Klikání na mapu** pro přesný výběr místa
-- **Přetahování markerů** pro jemné doladění pozice
-- **Reverse geocoding** - automatické získání adresy z souřadnic
+### 🗺️ Mapa a trasy (OpenStreetMap - ZDARMA!)
+- **Nominatim API** - geocoding (adresa → souřadnice)
+- **OSRM API** - routing a výpočet vzdáleností
+- **Vyhledávání adres** v celé Evropě
+- **Přesný výpočet tras** po silnicích
+- **Automatická detekce** při zadání města/adresy
+- **Žádné API klíče potřeba** - vše funguje out-of-the-box
 
 ### 💰 Cenový kalkulátor
 - **Typy nákladů**: malé (do 1t), střední (1-5t), těžké (5-15t), nadrozměrné
 - **Typy vozidel**: dodávka s plachtou, nákladák Hardox, nákladák s plachtou, malý kamion (7.5t), střední (12t), velký (24t)
-- **Automatický výpočet vzdálenosti** pomocí Google Maps Distance Matrix API
-- **Podpora pro všechna města v Evropě** - automatické geocoding pro jakékoliv evropské město
+- **Automatický výpočet vzdálenosti** pomocí OSRM API (zdarma!)
+- **Podpora pro všechna města v Evropě** - automatické geocoding pomocí Nominatim
 - **Cenové pásma podle vzdálenosti**:
   - Místní přeprava (do 50 km): základní cena
   - Regionální (50-200 km): +30% příplatek
