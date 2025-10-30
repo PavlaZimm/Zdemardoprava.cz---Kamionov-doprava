@@ -1,35 +1,15 @@
 
 
-
 import { Calculator } from '@/components/calculator'
 import { ServicesSection } from '@/components/services-section'
 import { TestimonialsSection } from '@/components/testimonials-section'
 import { Footer } from '@/components/footer'
+import { Header } from '@/components/header'
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-8">
-              <h1 className="text-2xl font-bold text-primary">Zdemardoprava.cz</h1>
-              <nav className="hidden lg:flex space-x-6" role="navigation" aria-label="Hlavní navigace">
-                <a href="#calculator" className="text-muted-foreground hover:text-primary transition-colors">Kalkulátor</a>
-                <a href="#services" className="text-muted-foreground hover:text-primary transition-colors">Služby</a>
-                <a href="#testimonials" className="text-muted-foreground hover:text-primary transition-colors">Recenze</a>
-                <a href="#contact" className="text-muted-foreground hover:text-primary transition-colors">Kontakt</a>
-              </nav>
-            </div>
-            <div className="flex items-center space-x-4">
-              <a href="tel:+420725215531" className="text-accent font-semibold hover:text-accent/80 transition-colors" aria-label="Zavolat na číslo 725 215 531">
-                725 215 531
-              </a>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section with Truck Background */}
       <section 

@@ -14,8 +14,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Route, Calculator as CalcIcon } from 'lucide-react'
+import { toast } from 'sonner'
+import { useMutation } from 'convex/react'
+import { api } from '@/convex/_generated/api'
 
 export function Calculator() {
+  const createOrder = useMutation(api.orders.create)
   const [fromLocation, setFromLocation] = useState('')
   const [toLocation, setToLocation] = useState('')
   const [fromCoordinates, setFromCoordinates] = useState<{ lat: number; lng: number } | null>(null)
@@ -36,102 +40,10 @@ export function Calculator() {
   const [isGeocodingFrom, setIsGeocodingFrom] = useState(false)
   const [isGeocodingTo, setIsGeocodingTo] = useState(false)
 
-  // Auto-assign coordinates when user types common city names
-  const getCoordinatesForCity = (address: string): { lat: number; lng: number } | null => {
-    const lowerAddress = address.toLowerCase().trim()
-    const cityCoordinates: { [key: string]: { lat: number; lng: number } } = {
-      'praha': { lat: 50.0755, lng: 14.4378 },
-      'prague': { lat: 50.0755, lng: 14.4378 },
-      'brno': { lat: 49.1951, lng: 16.6068 },
-      'ostrava': { lat: 49.8209, lng: 18.2625 },
-      'plzeň': { lat: 49.7384, lng: 13.3736 },
-      'plzen': { lat: 49.7384, lng: 13.3736 },
-      'pilsen': { lat: 49.7384, lng: 13.3736 },
-      'liberec': { lat: 50.7663, lng: 15.0543 },
-      'olomouc': { lat: 49.5938, lng: 17.2509 },
-      'budějovice': { lat: 48.9744, lng: 14.4743 },
-      'české budějovice': { lat: 48.9744, lng: 14.4743 },
-      'ceske budejovice': { lat: 48.9744, lng: 14.4743 },
-      'hradec králové': { lat: 50.2103, lng: 15.8327 },
-      'hradec kralove': { lat: 50.2103, lng: 15.8327 },
-      'pardubice': { lat: 50.0343, lng: 15.7812 },
-      'zlín': { lat: 49.2265, lng: 17.6679 },
-      'zlin': { lat: 49.2265, lng: 17.6679 },
-      'kladno': { lat: 50.1473, lng: 14.1027 },
-      'most': { lat: 50.5030, lng: 13.6357 },
-      'opava': { lat: 49.9387, lng: 17.9027 },
-      'frýdek-místek': { lat: 49.6835, lng: 18.3488 },
-      'frydek-mistek': { lat: 49.6835, lng: 18.3488 },
-      'karviná': { lat: 49.8540, lng: 18.5409 },
-      'karvina': { lat: 49.8540, lng: 18.5409 },
-      'jihlava': { lat: 49.3961, lng: 15.5910 },
-      'teplice': { lat: 50.6404, lng: 13.8249 },
-      'děčín': { lat: 50.7820, lng: 14.2147 },
-      'decin': { lat: 50.7820, lng: 14.2147 },
-      'ústí nad labem': { lat: 50.6607, lng: 14.0322 },
-      'usti nad labem': { lat: 50.6607, lng: 14.0322 },
-      'chomutov': { lat: 50.4607, lng: 13.4175 },
-      'mladá boleslav': { lat: 50.4113, lng: 14.9033 },
-      'mlada boleslav': { lat: 50.4113, lng: 14.9033 },
-      'třebíč': { lat: 49.2144, lng: 15.8819 },
-      'trebic': { lat: 49.2144, lng: 15.8819 },
-      'havířov': { lat: 49.7797, lng: 18.4371 },
-      'havirov': { lat: 49.7797, lng: 18.4371 },
-      'kolín': { lat: 50.0281, lng: 15.2018 },
-      'kolin': { lat: 50.0281, lng: 15.2018 },
-      'přerov': { lat: 49.4551, lng: 17.4510 },
-      'prerov': { lat: 49.4551, lng: 17.4510 },
-      'prostějov': { lat: 49.4719, lng: 17.1118 },
-      'prostejov': { lat: 49.4719, lng: 17.1118 },
-      'karlovy vary': { lat: 50.2329, lng: 12.8713 },
-      'jablonec nad nisou': { lat: 50.7244, lng: 15.1710 },
-      'jablonec': { lat: 50.7244, lng: 15.1710 },
-      'cheb': { lat: 50.0796, lng: 12.3739 },
-      'trutnov': { lat: 50.5615, lng: 15.9127 },
-      'znojmo': { lat: 48.8555, lng: 16.0488 },
-      'vsetín': { lat: 49.3386, lng: 17.9974 },
-      'vsetin': { lat: 49.3386, lng: 17.9974 },
-      'hodonín': { lat: 48.8488, lng: 17.1322 },
-      'hodonin': { lat: 48.8488, lng: 17.1322 },
-      'břeclav': { lat: 48.7589, lng: 16.8821 },
-      'breclav': { lat: 48.7589, lng: 16.8821 },
-      'uherské hradiště': { lat: 49.0697, lng: 17.4594 },
-      'uherske hradiste': { lat: 49.0697, lng: 17.4594 },
-      'kroměříž': { lat: 49.2978, lng: 17.3928 },
-      'kromeriz': { lat: 49.2978, lng: 17.3928 },
-      // Přidávám Chabařovice a Dresden
-      'chabařovice': { lat: 50.6667, lng: 13.9667 },
-      'chabarovice': { lat: 50.6667, lng: 13.9667 },
-      'dresden': { lat: 51.0504, lng: 13.7373 },
-      'drážďany': { lat: 51.0504, lng: 13.7373 },
-      'drazdany': { lat: 51.0504, lng: 13.7373 }
-    }
-
-    console.log('Looking for coordinates for:', lowerAddress)
-
-    // Try exact match first
-    if (cityCoordinates[lowerAddress]) {
-      console.log('Found exact match:', cityCoordinates[lowerAddress])
-      return cityCoordinates[lowerAddress]
-    }
-
-    // Try to find a match by checking if any city name is contained in the address
-    for (const [city, coords] of Object.entries(cityCoordinates)) {
-      if (lowerAddress.includes(city) || city.includes(lowerAddress)) {
-        console.log('Found partial match:', city, coords)
-        return coords
-      }
-    }
-
-    console.log('No coordinates found in hardcoded list for:', lowerAddress)
-    return null
-  }
-
   // Geocode any address using Google Maps API
   const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
     if (!apiKey || apiKey === 'demo-key') {
-      console.log('No valid API key for geocoding')
       return null
     }
 
@@ -158,103 +70,84 @@ export function Calculator() {
           if (status === 'OK' && results && results[0] && results[0].geometry) {
             const location = results[0].geometry.location
             const coords = { lat: location.lat(), lng: location.lng() }
-            console.log('Geocoded address:', address, 'to:', coords)
             resolve(coords)
           } else {
-            console.log('Geocoding failed for:', address, 'status:', status)
             resolve(null)
           }
         })
       })
     } catch (error) {
-      console.error('Error geocoding address:', error)
       return null
     }
   }
 
-  // Auto-detect coordinates when user types in address fields
+  // Auto-detect coordinates when user types in address fields with debouncing
   useEffect(() => {
-    console.log('FROM location changed:', fromLocation, 'length:', fromLocation?.length)
-    if (fromLocation && fromLocation.length > 2) {
-      const coords = getCoordinatesForCity(fromLocation)
-      if (coords && (!fromCoordinates || fromCoordinates.lat !== coords.lat)) {
-        console.log('Setting FROM coordinates from hardcoded list:', fromLocation, coords)
-        setFromCoordinates(coords)
-        setIsGeocodingFrom(false)
-      } else if (!coords) {
-        // Try geocoding
-        console.log('No hardcoded coords, trying geocoding for FROM:', fromLocation)
-        setIsGeocodingFrom(true)
-        geocodeAddress(fromLocation).then((geocodedCoords) => {
-          if (geocodedCoords && (!fromCoordinates || fromCoordinates.lat !== geocodedCoords.lat)) {
-            console.log('Setting FROM coordinates from geocoding:', fromLocation, geocodedCoords)
-            setFromCoordinates(geocodedCoords)
-          }
-          setIsGeocodingFrom(false)
-        })
-      }
-    } else if (fromLocation && fromLocation.length <= 2) {
-      console.log('FROM location too short, clearing coordinates')
+    if (!fromLocation || fromLocation.length <= 2) {
       setFromCoordinates(null)
       setIsGeocodingFrom(false)
+      return
     }
+
+    const timer = setTimeout(() => {
+      setIsGeocodingFrom(true)
+      geocodeAddress(fromLocation).then((geocodedCoords) => {
+        if (geocodedCoords) {
+          setFromCoordinates(geocodedCoords)
+        }
+        setIsGeocodingFrom(false)
+      })
+    }, 800) // Debounce 800ms
+
+    return () => clearTimeout(timer)
   }, [fromLocation])
 
   useEffect(() => {
-    console.log('TO location changed:', toLocation, 'length:', toLocation?.length)
-    if (toLocation && toLocation.length > 2) {
-      const coords = getCoordinatesForCity(toLocation)
-      if (coords && (!toCoordinates || toCoordinates.lat !== coords.lat)) {
-        console.log('Setting TO coordinates from hardcoded list:', toLocation, coords)
-        setToCoordinates(coords)
-        setIsGeocodingTo(false)
-      } else if (!coords) {
-        // Try geocoding
-        console.log('No hardcoded coords, trying geocoding for TO:', toLocation)
-        setIsGeocodingTo(true)
-        geocodeAddress(toLocation).then((geocodedCoords) => {
-          if (geocodedCoords && (!toCoordinates || toCoordinates.lat !== geocodedCoords.lat)) {
-            console.log('Setting TO coordinates from geocoding:', toLocation, geocodedCoords)
-            setToCoordinates(geocodedCoords)
-          }
-          setIsGeocodingTo(false)
-        })
-      }
-    } else if (toLocation && toLocation.length <= 2) {
-      console.log('TO location too short, clearing coordinates')
+    if (!toLocation || toLocation.length <= 2) {
       setToCoordinates(null)
       setIsGeocodingTo(false)
+      return
     }
+
+    const timer = setTimeout(() => {
+      setIsGeocodingTo(true)
+      geocodeAddress(toLocation).then((geocodedCoords) => {
+        if (geocodedCoords) {
+          setToCoordinates(geocodedCoords)
+        }
+        setIsGeocodingTo(false)
+      })
+    }, 800) // Debounce 800ms
+
+    return () => clearTimeout(timer)
   }, [toLocation])
 
   // Calculate distance when both coordinates are available
   useEffect(() => {
-    console.log('Coordinates changed:', { fromCoordinates, toCoordinates })
     if (fromCoordinates && toCoordinates) {
-      console.log('Both coordinates available, calculating distance...')
       calculateDistance()
+    } else {
+      setDistance(null)
+      setDuration(null)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromCoordinates, toCoordinates])
 
   const calculateDistance = async () => {
     if (!fromCoordinates || !toCoordinates) {
-      console.log('Missing coordinates:', { fromCoordinates, toCoordinates })
       return
     }
 
-    console.log('Starting distance calculation between:', fromCoordinates, 'and', toCoordinates)
     setIsCalculatingDistance(true)
     try {
       // Check if we have a valid API key
       const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
       if (!apiKey || apiKey === 'demo-key') {
-        console.log('Using fallback distance calculation (no valid API key)')
         // Use fallback straight-line distance immediately
         const straightDistance = calculateStraightLineDistance(fromCoordinates, toCoordinates)
         const roadDistance = Math.round(straightDistance * 1.3) // Add 30% for road distance approximation
         const estimatedDuration = Math.round(straightDistance * 1.3 / 80)
-        
-        console.log('Calculated distance:', roadDistance, 'km, duration:', estimatedDuration, 'hours')
+
         setDistance(roadDistance)
         setDuration('Přibližně ' + estimatedDuration + ' hodin')
         setIsCalculatingDistance(false)
@@ -263,7 +156,6 @@ export function Calculator() {
 
       // Load Google Maps API if not already loaded
       if (!(window as any).google) {
-        console.log('Loading Google Maps API...')
         const { Loader } = await import('@googlemaps/js-api-loader')
         const loader = new Loader({
           apiKey: apiKey,
@@ -271,11 +163,10 @@ export function Calculator() {
           libraries: ['geometry']
         })
         await loader.load()
-        console.log('Google Maps API loaded')
       }
 
       const service = new (window as any).google.maps.DistanceMatrixService()
-      
+
       service.getDistanceMatrix({
         origins: [fromCoordinates],
         destinations: [toCoordinates],
@@ -284,31 +175,25 @@ export function Calculator() {
         avoidHighways: false,
         avoidTolls: false
       }, (response: any, status: any) => {
-        console.log('Google Maps API response:', { response, status })
         if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
           const element = response.rows[0].elements[0]
           const distanceInKm = Math.round(element.distance.value / 1000)
-          console.log('Google Maps distance:', distanceInKm, 'km')
           setDistance(distanceInKm)
           setDuration(element.duration.text)
         } else {
-          console.error('Distance calculation failed:', status)
           // Fallback to straight-line distance
           const straightDistance = calculateStraightLineDistance(fromCoordinates, toCoordinates)
           const roadDistance = Math.round(straightDistance * 1.3)
-          console.log('Fallback distance:', roadDistance, 'km')
           setDistance(roadDistance)
           setDuration('Přibližně ' + Math.round(straightDistance * 1.3 / 80) + ' hodin')
         }
         setIsCalculatingDistance(false)
       })
     } catch (error) {
-      console.error('Error calculating distance:', error)
       // Fallback to straight-line distance
       if (fromCoordinates && toCoordinates) {
         const straightDistance = calculateStraightLineDistance(fromCoordinates, toCoordinates)
         const roadDistance = Math.round(straightDistance * 1.3)
-        console.log('Error fallback distance:', roadDistance, 'km')
         setDistance(roadDistance)
         setDuration('Přibližně ' + Math.round(straightDistance * 1.3 / 80) + ' hodin')
       }
@@ -372,8 +257,82 @@ export function Calculator() {
   ]
 
   // Calculate final price with distance multiplier
-  const basePrice = cargoType ? 0 : fullTruckType ? fullTruckOptions.find(v => v.id === fullTruckType)?.price || 0 : vehicleType ? vehicleOptions.find(v => v.id === vehicleType)?.price || 0 : 0
-  const finalPrice = Math.round(basePrice * getDistanceMultiplier())
+  const basePrice = fullTruckType
+    ? fullTruckOptions.find(v => v.id === fullTruckType)?.price || 0
+    : vehicleType
+      ? vehicleOptions.find(v => v.id === vehicleType)?.price || 0
+      : 0
+  const finalPrice = basePrice > 0 ? Math.round(basePrice * getDistanceMultiplier()) : 0
+  const finalPriceWithVAT = Math.round(finalPrice * 1.21) // Add 21% VAT
+
+  const handleSubmitOrder = async () => {
+    // Validate form
+    if (!fromLocation || !toLocation) {
+      toast.error('Vyplňte prosím místo nakládky a vykládky')
+      return
+    }
+    if (!vehicleType && !fullTruckType) {
+      toast.error('Vyberte prosím typ vozidla')
+      return
+    }
+    if (!firstName || !lastName) {
+      toast.error('Vyplňte prosím jméno a příjmení')
+      return
+    }
+    if (!phone) {
+      toast.error('Vyplňte prosím telefonní číslo')
+      return
+    }
+    if (!email) {
+      toast.error('Vyplňte prosím emailovou adresu')
+      return
+    }
+
+    try {
+      // Create order in Convex
+      await createOrder({
+        fromLocation,
+        toLocation,
+        fromCoordinates: fromCoordinates || undefined,
+        toCoordinates: toCoordinates || undefined,
+        distance: distance || undefined,
+        cargoType: cargoType || undefined,
+        vehicleType: vehicleType || undefined,
+        fullTruckType: fullTruckType || undefined,
+        pickupDate: pickupDate || undefined,
+        firstName,
+        lastName,
+        companyName: companyName || undefined,
+        phone,
+        email,
+        address: address || undefined,
+        finalPrice: finalPrice || undefined,
+        finalPriceWithVAT: finalPriceWithVAT || undefined,
+      })
+
+      toast.success('Objednávka byla úspěšně odeslána! Brzy vás budeme kontaktovat.')
+
+      // Reset form
+      setFromLocation('')
+      setToLocation('')
+      setFromCoordinates(null)
+      setToCoordinates(null)
+      setDistance(null)
+      setDuration(null)
+      setCargoType('')
+      setVehicleType('')
+      setFullTruckType('')
+      setPickupDate('')
+      setFirstName('')
+      setLastName('')
+      setCompanyName('')
+      setPhone('')
+      setEmail('')
+      setAddress('')
+    } catch (error) {
+      toast.error('Něco se pokazilo. Zkuste to prosím znovu nebo nás kontaktujte telefonicky.')
+    }
+  }
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -658,6 +617,22 @@ export function Calculator() {
                 <span className="font-semibold">{distance} km</span>
               </div>
             )}
+            {finalPrice > 0 && (
+              <>
+                <div className="flex justify-between items-center py-2 border-t pt-4">
+                  <span className="text-gray-600">Cena bez DPH</span>
+                  <span className="font-semibold">{finalPrice.toLocaleString('cs-CZ')} Kč</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-600">DPH (21%)</span>
+                  <span className="font-semibold">{(finalPriceWithVAT - finalPrice).toLocaleString('cs-CZ')} Kč</span>
+                </div>
+                <div className="flex justify-between items-center py-3 border-t pt-4 bg-primary/10 -mx-6 px-6 rounded-lg">
+                  <span className="text-lg font-bold text-gray-900">Celková cena</span>
+                  <span className="text-2xl font-bold text-primary">{finalPriceWithVAT.toLocaleString('cs-CZ')} Kč</span>
+                </div>
+              </>
+            )}
             {firstName && (
               <div className="flex justify-between items-center py-2">
                 <span className="text-gray-600">Jméno</span>
@@ -695,26 +670,8 @@ export function Calculator() {
               </div>
             )}
           </div>
-          <Button onClick={() => {
-            const orderData = {
-              fromLocation,
-              toLocation,
-              distance,
-              cargoType,
-              vehicleType,
-              fullTruckType,
-              pickupDate,
-              firstName,
-              lastName,
-              companyName,
-              phone,
-              email,
-              address
-            }
-            console.log('Order submitted:', orderData)
-            // Here you would send to backend
-          }} className="w-full bg-accent hover:bg-accent/90 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
-            Odeslat
+          <Button onClick={handleSubmitOrder} className="w-full bg-accent hover:bg-accent/90 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
+            Odeslat poptávku
           </Button>
           <p className="text-xs text-gray-500 text-center mt-4">
             Odesláním objednávky souhlasíte s obchodními podmínkami a podmínkami pro ochranu osobních údajů
