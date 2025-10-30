@@ -40,42 +40,30 @@ export function Calculator() {
   const [isGeocodingFrom, setIsGeocodingFrom] = useState(false)
   const [isGeocodingTo, setIsGeocodingTo] = useState(false)
 
-  // Geocode any address using Google Maps API
+  // Geocode any address using Nominatim (OpenStreetMap) - FREE, no API key needed!
   const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-    if (!apiKey || apiKey === 'demo-key') {
-      return null
-    }
-
     try {
-      // Load Google Maps API if not already loaded
-      if (!(window as any).google) {
-        const { Loader } = await import('@googlemaps/js-api-loader')
-        const loader = new Loader({
-          apiKey: apiKey,
-          version: 'weekly',
-          libraries: ['geometry']
-        })
-        await loader.load()
+      // Nominatim API - free geocoding service
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=cz,sk,at,de,pl,hu,si,hr,ba,rs,me,mk,al,bg,ro,md,ua,by,lt,lv,ee,fi,se,no,dk,nl,be,lu,fr,ch,it,es,pt,gb,ie,mt,gr,cy`
+
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Zdemardoprava.cz' // Nominatim requires User-Agent
+        }
+      })
+
+      if (!response.ok) return null
+
+      const data = await response.json()
+
+      if (data && data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon)
+        }
       }
 
-      const geocoder = new (window as any).google.maps.Geocoder()
-      return new Promise((resolve) => {
-        geocoder.geocode({
-          address: address,
-          componentRestrictions: {
-            country: ['CZ', 'SK', 'AT', 'DE', 'PL', 'HU', 'SI', 'HR', 'BA', 'RS', 'ME', 'MK', 'AL', 'BG', 'RO', 'MD', 'UA', 'BY', 'LT', 'LV', 'EE', 'FI', 'SE', 'NO', 'DK', 'NL', 'BE', 'LU', 'FR', 'CH', 'IT', 'ES', 'PT', 'GB', 'IE', 'MT', 'GR', 'CY']
-          }
-        }, (results: any, status: any) => {
-          if (status === 'OK' && results && results[0] && results[0].geometry) {
-            const location = results[0].geometry.location
-            const coords = { lat: location.lat(), lng: location.lng() }
-            resolve(coords)
-          } else {
-            resolve(null)
-          }
-        })
-      })
+      return null
     } catch (error) {
       return null
     }
@@ -140,63 +128,37 @@ export function Calculator() {
 
     setIsCalculatingDistance(true)
     try {
-      // Check if we have a valid API key
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-      if (!apiKey || apiKey === 'demo-key') {
-        // Use fallback straight-line distance immediately
-        const straightDistance = calculateStraightLineDistance(fromCoordinates, toCoordinates)
-        const roadDistance = Math.round(straightDistance * 1.3) // Add 30% for road distance approximation
-        const estimatedDuration = Math.round(straightDistance * 1.3 / 80)
+      // Use OSRM (Open Source Routing Machine) - FREE routing API!
+      const url = `https://router.project-osrm.org/route/v1/driving/${fromCoordinates.lng},${fromCoordinates.lat};${toCoordinates.lng},${toCoordinates.lat}?overview=false`
 
-        setDistance(roadDistance)
-        setDuration('Přibližně ' + estimatedDuration + ' hodin')
-        setIsCalculatingDistance(false)
-        return
+      const response = await fetch(url)
+
+      if (!response.ok) throw new Error('OSRM API failed')
+
+      const data = await response.json()
+
+      if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+        const route = data.routes[0]
+        const distanceInKm = Math.round(route.distance / 1000)
+        const durationInMinutes = Math.round(route.duration / 60)
+        const hours = Math.floor(durationInMinutes / 60)
+        const minutes = durationInMinutes % 60
+
+        setDistance(distanceInKm)
+        setDuration(`${hours}h ${minutes}min`)
+      } else {
+        throw new Error('No route found')
       }
 
-      // Load Google Maps API if not already loaded
-      if (!(window as any).google) {
-        const { Loader } = await import('@googlemaps/js-api-loader')
-        const loader = new Loader({
-          apiKey: apiKey,
-          version: 'weekly',
-          libraries: ['geometry']
-        })
-        await loader.load()
-      }
-
-      const service = new (window as any).google.maps.DistanceMatrixService()
-
-      service.getDistanceMatrix({
-        origins: [fromCoordinates],
-        destinations: [toCoordinates],
-        travelMode: (window as any).google.maps.TravelMode.DRIVING,
-        unitSystem: (window as any).google.maps.UnitSystem.METRIC,
-        avoidHighways: false,
-        avoidTolls: false
-      }, (response: any, status: any) => {
-        if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
-          const element = response.rows[0].elements[0]
-          const distanceInKm = Math.round(element.distance.value / 1000)
-          setDistance(distanceInKm)
-          setDuration(element.duration.text)
-        } else {
-          // Fallback to straight-line distance
-          const straightDistance = calculateStraightLineDistance(fromCoordinates, toCoordinates)
-          const roadDistance = Math.round(straightDistance * 1.3)
-          setDistance(roadDistance)
-          setDuration('Přibližně ' + Math.round(straightDistance * 1.3 / 80) + ' hodin')
-        }
-        setIsCalculatingDistance(false)
-      })
+      setIsCalculatingDistance(false)
     } catch (error) {
-      // Fallback to straight-line distance
-      if (fromCoordinates && toCoordinates) {
-        const straightDistance = calculateStraightLineDistance(fromCoordinates, toCoordinates)
-        const roadDistance = Math.round(straightDistance * 1.3)
-        setDistance(roadDistance)
-        setDuration('Přibližně ' + Math.round(straightDistance * 1.3 / 80) + ' hodin')
-      }
+      // Fallback to straight-line distance with approximation
+      const straightDistance = calculateStraightLineDistance(fromCoordinates, toCoordinates)
+      const roadDistance = Math.round(straightDistance * 1.3) // Add 30% for road curves
+      const estimatedDuration = Math.round(straightDistance * 1.3 / 80) // Assume 80 km/h average
+
+      setDistance(roadDistance)
+      setDuration('Přibližně ' + estimatedDuration + ' hodin')
       setIsCalculatingDistance(false)
     }
   }

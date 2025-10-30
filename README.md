@@ -42,16 +42,16 @@ Profesionální website pro kamionovou dopravu s interaktivním kalkulátorem ce
 ## Technické detaily
 
 ### Stack
-- **Next.js 14** - React framework
+- **Next.js 15** - React framework
 - **TypeScript** - typová bezpečnost
 - **Tailwind CSS** - styling
 - **Shadcn/ui** - UI komponenty
-- **Google Maps API** - mapy a geocoding
-- **Convex** - databáze (připraveno)
+- **OpenStreetMap** - bezplatné mapy (Nominatim + OSRM + Leaflet)
+- **Convex** - databáze
 
 ### Klíčové komponenty
 - `components/calculator.tsx` - hlavní kalkulátor
-- `components/map-location-picker.tsx` - výběr míst na mapě
+- `components/header.tsx` - responzivní navigace
 - `components/services-section.tsx` - sekce služeb
 - `components/testimonials-section.tsx` - recenze
 - `components/footer.tsx` - patička
@@ -59,21 +59,21 @@ Profesionální website pro kamionovou dopravu s interaktivním kalkulátorem ce
 
 ### SEO soubory
 - `app/metadata.json` - centralizovaná SEO metadata
-- `app/sitemap.ts` - automaticky generovaná sitemap
-- `app/robots.ts` - pravidla pro vyhledávací roboty
+- `public/sitemap.xml` - statická sitemap
+- `public/robots.txt` - pravidla pro vyhledávací roboty
 
 ### Nastavení prostředí
-Pro plnou funkcionalitu je potřeba nastavit tyto proměnné:
+
+**Žádné API klíče potřeba!** 🎉 Projekt používá bezplatné OpenStreetMap služby.
+
+Volitelně můžete nastavit Convex databázi:
 
 ```env
-# Google Maps API Key
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
-
-# Convex Database URL
+# Convex Database URL (volitelné)
 NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
 ```
 
-Viz `.env.example` pro kompletní seznam proměnných.
+Viz `.env.example` pro více informací.
 
 ## Design
 - **Barvy**: Modrá (#39a1e6) jako hlavní barva
@@ -90,11 +90,12 @@ Projekt je nakonfigurovaný pro automatický deploy na GitHub Pages.
 1. **Přejděte do Settings vašeho GitHub repository**
 2. **Jděte do sekce "Pages"** (v levém menu)
 3. **V Source vyberte "GitHub Actions"**
-4. **Přidejte Secrets** (Settings → Secrets and variables → Actions):
-   - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - váš Google Maps API klíč
+4. **(Volitelné) Přidejte Secret** pro databázi (Settings → Secrets and variables → Actions):
    - `NEXT_PUBLIC_CONVEX_URL` - URL vaší Convex databáze
 
-5. **Pushnete do main branch** a deployment se spustí automaticky
+5. **Pushnete do branch** a deployment se spustí automaticky
+
+**Poznámka:** Žádné API klíče nejsou potřeba! Mapy fungují bez konfigurace.
 
 ### Lokální build:
 ```bash

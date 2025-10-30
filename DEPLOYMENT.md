@@ -9,18 +9,17 @@
    - Source: Vyberte **"GitHub Actions"**
 3. Klikněte **Save**
 
-### 2️⃣ Přidat API klíče (Secrets)
+### 2️⃣ Přidat Convex URL (Volitelné)
+
+**Mapy fungují bez API klíče!** 🎉 Tento projekt používá bezplatné OpenStreetMap služby.
+
+Pokud chcete používat databázi pro ukládání objednávek:
 
 1. Jděte na **https://github.com/PavlaZimm/Zdemardoprava.cz---Kamionov-doprava/settings/secrets/actions**
 2. Klikněte na **"New repository secret"**
-3. Přidejte následující secrets:
+3. Přidejte secret:
 
-#### Secret #1: Google Maps API Key
-- **Name:** `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
-- **Value:** Váš Google Maps API klíč
-- Získejte na: https://console.cloud.google.com/apis/credentials
-
-#### Secret #2: Convex Database URL (volitelné)
+#### Convex Database URL (volitelné)
 - **Name:** `NEXT_PUBLIC_CONVEX_URL`
 - **Value:** `https://your-deployment.convex.cloud`
 - Získejte na: https://dashboard.convex.dev/
@@ -55,10 +54,11 @@ URL najdete také v:
 ## ✅ Checklist před nasazením
 
 - [ ] GitHub Pages je aktivován (Source: GitHub Actions)
-- [ ] Secret `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` je přidán
-- [ ] Secret `NEXT_PUBLIC_CONVEX_URL` je přidán (pokud používáte databázi)
+- [ ] Secret `NEXT_PUBLIC_CONVEX_URL` je přidán (volitelné - pouze pro databázi)
 - [ ] Změny jsou pushnuté do repository
 - [ ] Workflow běží bez chyb
+
+**Poznámka:** Žádné API klíče pro mapy nejsou potřeba! Projekt používá bezplatné OpenStreetMap služby.
 
 ---
 
@@ -74,9 +74,11 @@ URL najdete také v:
 - Zkontrolujte Settings → Pages, že je source nastavený na "GitHub Actions"
 - Vymažte browser cache a zkuste znovu
 
-### Mapa nefunguje
-- Zkontrolujte, že `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` secret je správně nastavený
-- Ověřte, že API klíč má povolený Maps JavaScript API a Geocoding API
+### Geocoding nebo mapa nefunguje
+- Mapy používají bezplatné OpenStreetMap služby (Nominatim a OSRM)
+- Žádné API klíče nejsou potřeba
+- Pokud geocoding nefunguje, zkontrolujte konzoli prohlížeče pro chybové zprávy
+- Nominatim a OSRM jsou veřejné API, měly by fungovat bez konfigurace
 
 ---
 

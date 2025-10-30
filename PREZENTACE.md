@@ -43,9 +43,12 @@ Moderní responzivní web pro kamionovou dopravu s interaktivním kalkulátorem 
 - **Next.js 15** - moderní React framework
 - **TypeScript** - typová bezpečnost
 - **Tailwind CSS** - responzivní design
-- **Google Maps API** - geocoding a výpočet vzdáleností
+- **OpenStreetMap** - ZDARMA geocoding a routing (Nominatim + OSRM)
+- **Leaflet** - interaktivní mapy
 - **Convex** - real-time databáze
 - **GitHub Pages** - hosting zdarma
+
+**Výhoda:** Žádné API klíče není potřeba! Vše běží zdarma.
 
 ---
 
