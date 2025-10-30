@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - claude/work-in-progress-011CUdLZq7AHZ83t6oo6N3TV
   workflow_dispatch:
 
 permissions:
