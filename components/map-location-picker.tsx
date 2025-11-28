@@ -5,6 +5,25 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { MapPin, Search } from 'lucide-react'
+import dynamic from 'next/dynamic'
+
+// Dynamically import Leaflet components to avoid SSR issues
+const MapContainer = dynamic(
+  () => import('react-leaflet').then((mod) => mod.MapContainer),
+  { ssr: false }
+)
+const TileLayer = dynamic(
+  () => import('react-leaflet').then((mod) => mod.TileLayer),
+  { ssr: false }
+)
+const Marker = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Marker),
+  { ssr: false }
+)
+const useMapEvents = dynamic(
+  () => import('react-leaflet').then((mod) => mod.useMapEvents),
+  { ssr: false }
+)
 
 interface MapLocationPickerProps {
   value: string
@@ -13,199 +32,109 @@ interface MapLocationPickerProps {
   buttonText: string
 }
 
+interface Suggestion {
+  place_id: string
+  display_name: string
+  lat: string
+  lon: string
+}
+
+// Component to handle map clicks
+function MapClickHandler({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click: (e) => {
+      onLocationSelect(e.latlng.lat, e.latlng.lng)
+    },
+  })
+  return null
+}
+
 export function MapLocationPicker({ value, onChange, placeholder, buttonText }: MapLocationPickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchValue, setSearchValue] = useState(value)
-  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const mapRef = useRef<HTMLDivElement>(null)
-  const mapInstance = useRef<any>(null)
-  const markerRef = useRef<any>(null)
-  const autocompleteService = useRef<any>(null)
-  const placesService = useRef<any>(null)
+  const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(null)
+  const [mapCenter, setMapCenter] = useState<[number, number]>([49.7437, 15.3386]) // Czech Republic center
+  const mapRef = useRef<any>(null)
 
-  // Initialize Google Maps
-  useEffect(() => {
-    if (isOpen && !mapInstance.current) {
-      initializeMap()
-    }
-  }, [isOpen])
-
-  const initializeMap = async () => {
-    try {
-      // Check if we have a valid API key
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-      if (!apiKey || apiKey === 'demo-key') {
-        console.log('No valid Google Maps API key, showing fallback interface')
-        // Show fallback interface for manual coordinate entry
-        if (mapRef.current) {
-          mapRef.current.innerHTML = `
-            <div class="flex items-center justify-center h-full bg-gray-100 rounded-lg">
-              <div class="text-center p-6">
-                <div class="text-gray-500 mb-4 text-4xl">🗺️</div>
-                <p class="text-gray-600 mb-4 font-medium">Mapa vyžaduje Google Maps API klíč</p>
-                <p class="text-sm text-gray-500 mb-4">Pro plnou funkcionalnost přidejte NEXT_PUBLIC_GOOGLE_MAPS_API_KEY do nastavení</p>
-                <p class="text-xs text-gray-400">Můžete stále zadávat adresy do vyhledávacího pole výše</p>
-              </div>
-            </div>
-          `
-        }
-        return
-      }
-
-      // Load Google Maps API
-      const { Loader } = await import('@googlemaps/js-api-loader')
-      const loader = new Loader({
-        apiKey: apiKey,
-        version: 'weekly',
-        libraries: ['places']
-      })
-
-      const google = await loader.load()
-
-      if (mapRef.current && (window as any).google) {
-        const googleMaps = (window as any).google.maps
-        
-        // Initialize map centered on Czech Republic
-        mapInstance.current = new googleMaps.Map(mapRef.current, {
-          center: { lat: 49.7437, lng: 15.3386 }, // Czech Republic center
-          zoom: 7,
-          mapTypeControl: false,
-          streetViewControl: false,
-          fullscreenControl: false,
-        })
-
-        // Initialize services
-        autocompleteService.current = new googleMaps.places.AutocompleteService()
-        placesService.current = new googleMaps.places.PlacesService(mapInstance.current)
-
-        // Add click listener to map
-        mapInstance.current.addListener('click', (event: any) => {
-          if (event.latLng) {
-            placeMarker(event.latLng)
-            reverseGeocode(event.latLng)
-          }
-        })
-      }
-    } catch (error) {
-      console.error('Error loading Google Maps:', error)
-      // Fallback: show message that map requires API key
-      if (mapRef.current) {
-        mapRef.current.innerHTML = `
-          <div class="flex items-center justify-center h-full bg-gray-100 rounded-lg">
-            <div class="text-center p-6">
-              <div class="text-gray-500 mb-4 text-4xl">🗺️</div>
-              <p class="text-gray-600 mb-4 font-medium">Chyba při načítání mapy</p>
-              <p class="text-sm text-gray-500 mb-4">Zkontrolujte Google Maps API klíč</p>
-              <p class="text-xs text-gray-400">Můžete stále zadávat adresy do vyhledávacího pole výše</p>
-            </div>
-          </div>
-        `
-      }
-    }
-  }
-
-  const placeMarker = (location: any) => {
-    if (markerRef.current) {
-      markerRef.current.setMap(null)
-    }
-
-    const googleMaps = (window as any).google.maps
-    markerRef.current = new googleMaps.Marker({
-      position: location,
-      map: mapInstance.current,
-      draggable: true,
-      animation: googleMaps.Animation.DROP,
-    })
-
-    markerRef.current.addListener('dragend', () => {
-      if (markerRef.current) {
-        const position = markerRef.current.getPosition()
-        if (position) {
-          reverseGeocode(position)
-        }
-      }
-    })
-  }
-
-  const reverseGeocode = (location: any) => {
-    const googleMaps = (window as any).google.maps
-    const geocoder = new googleMaps.Geocoder()
-    geocoder.geocode({ location }, (results: any, status: any) => {
-      if (status === 'OK' && results && results[0]) {
-        const address = results[0].formatted_address
-        setSearchValue(address)
-      }
-    })
-  }
-
-  const searchPlaces = async (query: string) => {
-    if (!query.trim() || !autocompleteService.current) return
+  // Geocode address to get coordinates using Nominatim
+  const geocodeAddress = async (address: string) => {
+    if (!address.trim()) return
 
     setIsLoading(true)
     try {
-      const request = {
-        input: query,
-        componentRestrictions: { country: ['cz', 'sk', 'at', 'de', 'pl'] }, // European countries
-        types: ['geocode', 'establishment']
-      }
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=5&countrycodes=cz,sk,at,de,pl`
+      )
+      const data = await response.json()
 
-      autocompleteService.current.getPlacePredictions(request, (predictions: any, status: any) => {
-        const googleMaps = (window as any).google.maps
-        if (status === googleMaps.places.PlacesServiceStatus.OK && predictions) {
-          setSuggestions(predictions)
-        } else {
-          setSuggestions([])
-        }
-        setIsLoading(false)
-      })
+      if (data && data.length > 0) {
+        setSuggestions(data)
+      } else {
+        setSuggestions([])
+      }
     } catch (error) {
-      console.error('Error searching places:', error)
+      console.error('Error geocoding address:', error)
+      setSuggestions([])
+    } finally {
       setIsLoading(false)
     }
   }
 
-  const selectPlace = (placeId: string, description: string) => {
-    if (!placesService.current) return
+  // Reverse geocode coordinates to get address
+  const reverseGeocode = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      )
+      const data = await response.json()
 
-    const request = {
-      placeId,
-      fields: ['geometry', 'formatted_address']
-    }
-
-    placesService.current.getDetails(request, (place: any, status: any) => {
-      const googleMaps = (window as any).google.maps
-      if (status === googleMaps.places.PlacesServiceStatus.OK && place && place.geometry?.location) {
-        const location = place.geometry.location
-        setSearchValue(description)
-        setSuggestions([])
-
-        // Center map and place marker
-        if (mapInstance.current) {
-          mapInstance.current.setCenter(location)
-          mapInstance.current.setZoom(15)
-          placeMarker(location)
-        }
+      if (data && data.display_name) {
+        setSearchValue(data.display_name)
       }
-    })
+    } catch (error) {
+      console.error('Error reverse geocoding:', error)
+    }
   }
 
+  // Handle place selection from suggestions
+  const selectPlace = (suggestion: Suggestion) => {
+    const lat = parseFloat(suggestion.lat)
+    const lng = parseFloat(suggestion.lon)
+
+    setSearchValue(suggestion.display_name)
+    setMarkerPosition([lat, lng])
+    setMapCenter([lat, lng])
+    setSuggestions([])
+
+    // Pan map to the selected location
+    if (mapRef.current) {
+      mapRef.current.setView([lat, lng], 15)
+    }
+  }
+
+  // Handle map click
+  const handleMapClick = (lat: number, lng: number) => {
+    setMarkerPosition([lat, lng])
+    reverseGeocode(lat, lng)
+  }
+
+  // Confirm selection
   const confirmSelection = () => {
-    const coordinates = markerRef.current?.getPosition()
-    if (coordinates) {
-      onChange(searchValue, { lat: coordinates.lat(), lng: coordinates.lng() })
+    if (markerPosition) {
+      onChange(searchValue, { lat: markerPosition[0], lng: markerPosition[1] })
     } else if (searchValue) {
-      // If no marker but we have a search value, try to geocode it manually or use a fallback
-      // For demo purposes, we'll use some common Czech cities coordinates
-      const fallbackCoordinates = getFallbackCoordinates(searchValue)
-      onChange(searchValue, fallbackCoordinates)
+      // If no marker but we have a search value, try to use fallback coordinates
+      const fallbackCoords = getFallbackCoordinates(searchValue)
+      onChange(searchValue, fallbackCoords)
     } else {
       onChange(searchValue)
     }
     setIsOpen(false)
   }
 
-  // Fallback coordinates for common Czech cities when API is not available
+  // Fallback coordinates for common Czech cities
   const getFallbackCoordinates = (address: string): { lat: number; lng: number } | undefined => {
     const lowerAddress = address.toLowerCase()
     const cityCoordinates: { [key: string]: { lat: number; lng: number } } = {
@@ -231,27 +160,42 @@ export function MapLocationPicker({ value, onChange, placeholder, buttonText }: 
       'děčín': { lat: 50.7820, lng: 14.2147 }
     }
 
-    // Try to find a match
     for (const [city, coords] of Object.entries(cityCoordinates)) {
       if (lowerAddress.includes(city)) {
         return coords
       }
     }
 
-    // If no match found, return Prague as default
-    return { lat: 50.0755, lng: 14.4378 }
+    return { lat: 50.0755, lng: 14.4378 } // Prague as default
   }
 
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchValue && searchValue !== value) {
-        searchPlaces(searchValue)
+      if (searchValue && searchValue !== value && searchValue.length > 2) {
+        geocodeAddress(searchValue)
       }
-    }, 300)
+    }, 500)
 
     return () => clearTimeout(timer)
   }, [searchValue])
+
+  // Load Leaflet CSS
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import('leaflet/dist/leaflet.css')
+
+      // Fix for default marker icon
+      import('leaflet').then((L) => {
+        delete (L.Icon.Default.prototype as any)._getIconUrl
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        })
+      })
+    }
+  }, [])
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -275,18 +219,17 @@ export function MapLocationPicker({ value, onChange, placeholder, buttonText }: 
               onChange={(e) => setSearchValue(e.target.value)}
               className="pl-10"
             />
-            
+
             {/* Suggestions */}
             {suggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
-                {suggestions.map((suggestion: any) => (
+              <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto mt-1">
+                {suggestions.map((suggestion) => (
                   <button
                     key={suggestion.place_id}
                     className="w-full text-left px-4 py-2 hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
-                    onClick={() => selectPlace(suggestion.place_id, suggestion.description)}
+                    onClick={() => selectPlace(suggestion)}
                   >
-                    <div className="font-medium">{suggestion.structured_formatting.main_text}</div>
-                    <div className="text-sm text-gray-600">{suggestion.structured_formatting.secondary_text}</div>
+                    <div className="text-sm">{suggestion.display_name}</div>
                   </button>
                 ))}
               </div>
@@ -294,18 +237,31 @@ export function MapLocationPicker({ value, onChange, placeholder, buttonText }: 
           </div>
 
           {/* Map */}
-          <div 
-            ref={mapRef} 
-            className="w-full h-96 rounded-lg border"
-            style={{ minHeight: '400px' }}
-          />
+          <div className="w-full h-96 rounded-lg border overflow-hidden" style={{ minHeight: '400px' }}>
+            {typeof window !== 'undefined' && (
+              <MapContainer
+                center={mapCenter}
+                zoom={7}
+                scrollWheelZoom={true}
+                style={{ height: '100%', width: '100%' }}
+                ref={mapRef}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                {markerPosition && <Marker position={markerPosition} />}
+                <MapClickHandler onLocationSelect={handleMapClick} />
+              </MapContainer>
+            )}
+          </div>
 
           {/* Instructions */}
           <div className="text-sm text-muted-foreground bg-blue-50 p-3 rounded-lg">
             <p><strong>Jak vybrat místo:</strong></p>
             <p>• Zadejte adresu do vyhledávacího pole</p>
             <p>• Nebo klikněte přímo na mapu</p>
-            <p>• Marker můžete přetáhnout na přesné místo</p>
+            <p>• Marker se automaticky umístí na vybrané místo</p>
           </div>
 
           {/* Action Buttons */}
@@ -322,4 +278,3 @@ export function MapLocationPicker({ value, onChange, placeholder, buttonText }: 
     </Dialog>
   )
 }
-
