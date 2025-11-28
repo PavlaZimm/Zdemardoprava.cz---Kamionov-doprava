@@ -1,9 +1,3 @@
-
-
-
-
-
-
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -99,12 +93,19 @@ export function Calculator() {
       'uherske hradiste': { lat: 49.0697, lng: 17.4594 },
       'kroměříž': { lat: 49.2978, lng: 17.3928 },
       'kromeriz': { lat: 49.2978, lng: 17.3928 },
-      // Přidávám Chabařovice a Dresden
       'chabařovice': { lat: 50.6667, lng: 13.9667 },
       'chabarovice': { lat: 50.6667, lng: 13.9667 },
       'dresden': { lat: 51.0504, lng: 13.7373 },
       'drážďany': { lat: 51.0504, lng: 13.7373 },
-      'drazdany': { lat: 51.0504, lng: 13.7373 }
+      'drazdany': { lat: 51.0504, lng: 13.7373 },
+      'berlin': { lat: 52.5200, lng: 13.4050 },
+      'bratislava': { lat: 48.1486, lng: 17.1077 },
+      'vienna': { lat: 48.2082, lng: 16.3738 },
+      'vídeň': { lat: 48.2082, lng: 16.3738 },
+      'viden': { lat: 48.2082, lng: 16.3738 },
+      'münchen': { lat: 48.1351, lng: 11.5820 },
+      'munich': { lat: 48.1351, lng: 11.5820 },
+      'mnichov': { lat: 48.1351, lng: 11.5820 }
     }
 
     console.log('Looking for coordinates for:', lowerAddress)
@@ -127,45 +128,25 @@ export function Calculator() {
     return null
   }
 
-  // Geocode any address using Google Maps API
+  // Geocode any address using Nominatim (OpenStreetMap)
   const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-    if (!apiKey || apiKey === 'demo-key') {
-      console.log('No valid API key for geocoding')
-      return null
-    }
-
     try {
-      // Load Google Maps API if not already loaded
-      if (!(window as any).google) {
-        const { Loader } = await import('@googlemaps/js-api-loader')
-        const loader = new Loader({
-          apiKey: apiKey,
-          version: 'weekly',
-          libraries: ['geometry']
-        })
-        await loader.load()
-      }
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&countrycodes=cz,sk,at,de,pl,hu`
+      )
+      const data = await response.json()
 
-      const geocoder = new (window as any).google.maps.Geocoder()
-      return new Promise((resolve) => {
-        geocoder.geocode({
-          address: address,
-          componentRestrictions: {
-            country: ['CZ', 'SK', 'AT', 'DE', 'PL', 'HU', 'SI', 'HR', 'BA', 'RS', 'ME', 'MK', 'AL', 'BG', 'RO', 'MD', 'UA', 'BY', 'LT', 'LV', 'EE', 'FI', 'SE', 'NO', 'DK', 'NL', 'BE', 'LU', 'FR', 'CH', 'IT', 'ES', 'PT', 'GB', 'IE', 'MT', 'GR', 'CY']
-          }
-        }, (results: any, status: any) => {
-          if (status === 'OK' && results && results[0] && results[0].geometry) {
-            const location = results[0].geometry.location
-            const coords = { lat: location.lat(), lng: location.lng() }
-            console.log('Geocoded address:', address, 'to:', coords)
-            resolve(coords)
-          } else {
-            console.log('Geocoding failed for:', address, 'status:', status)
-            resolve(null)
-          }
-        })
-      })
+      if (data && data.length > 0) {
+        const coords = {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon)
+        }
+        console.log('Geocoded address:', address, 'to:', coords)
+        return coords
+      } else {
+        console.log('Geocoding failed for:', address)
+        return null
+      }
     } catch (error) {
       console.error('Error geocoding address:', error)
       return null
@@ -244,74 +225,44 @@ export function Calculator() {
 
     console.log('Starting distance calculation between:', fromCoordinates, 'and', toCoordinates)
     setIsCalculatingDistance(true)
+
     try {
-      // Check if we have a valid API key
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-      if (!apiKey || apiKey === 'demo-key') {
-        console.log('Using fallback distance calculation (no valid API key)')
-        // Use fallback straight-line distance immediately
-        const straightDistance = calculateStraightLineDistance(fromCoordinates, toCoordinates)
-        const roadDistance = Math.round(straightDistance * 1.3) // Add 30% for road distance approximation
-        const estimatedDuration = Math.round(straightDistance * 1.3 / 80)
-        
-        console.log('Calculated distance:', roadDistance, 'km, duration:', estimatedDuration, 'hours')
-        setDistance(roadDistance)
-        setDuration('Přibližně ' + estimatedDuration + ' hodin')
+      // Try using OSRM (Open Source Routing Machine) for real routing distance
+      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${fromCoordinates.lng},${fromCoordinates.lat};${toCoordinates.lng},${toCoordinates.lat}?overview=false`
+
+      console.log('Requesting OSRM routing...')
+      const response = await fetch(osrmUrl)
+      const data = await response.json()
+
+      if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+        const route = data.routes[0]
+        const distanceInKm = Math.round(route.distance / 1000)
+        const durationInHours = Math.round(route.duration / 3600 * 10) / 10 // Round to 1 decimal
+
+        console.log('OSRM distance:', distanceInKm, 'km, duration:', durationInHours, 'hours')
+        setDistance(distanceInKm)
+        setDuration(`Přibližně ${durationInHours} hodin`)
         setIsCalculatingDistance(false)
         return
+      } else {
+        console.log('OSRM routing failed, falling back to straight-line distance')
       }
-
-      // Load Google Maps API if not already loaded
-      if (!(window as any).google) {
-        console.log('Loading Google Maps API...')
-        const { Loader } = await import('@googlemaps/js-api-loader')
-        const loader = new Loader({
-          apiKey: apiKey,
-          version: 'weekly',
-          libraries: ['geometry']
-        })
-        await loader.load()
-        console.log('Google Maps API loaded')
-      }
-
-      const service = new (window as any).google.maps.DistanceMatrixService()
-      
-      service.getDistanceMatrix({
-        origins: [fromCoordinates],
-        destinations: [toCoordinates],
-        travelMode: (window as any).google.maps.TravelMode.DRIVING,
-        unitSystem: (window as any).google.maps.UnitSystem.METRIC,
-        avoidHighways: false,
-        avoidTolls: false
-      }, (response: any, status: any) => {
-        console.log('Google Maps API response:', { response, status })
-        if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
-          const element = response.rows[0].elements[0]
-          const distanceInKm = Math.round(element.distance.value / 1000)
-          console.log('Google Maps distance:', distanceInKm, 'km')
-          setDistance(distanceInKm)
-          setDuration(element.duration.text)
-        } else {
-          console.error('Distance calculation failed:', status)
-          // Fallback to straight-line distance
-          const straightDistance = calculateStraightLineDistance(fromCoordinates, toCoordinates)
-          const roadDistance = Math.round(straightDistance * 1.3)
-          console.log('Fallback distance:', roadDistance, 'km')
-          setDistance(roadDistance)
-          setDuration('Přibližně ' + Math.round(straightDistance * 1.3 / 80) + ' hodin')
-        }
-        setIsCalculatingDistance(false)
-      })
     } catch (error) {
-      console.error('Error calculating distance:', error)
-      // Fallback to straight-line distance
-      if (fromCoordinates && toCoordinates) {
-        const straightDistance = calculateStraightLineDistance(fromCoordinates, toCoordinates)
-        const roadDistance = Math.round(straightDistance * 1.3)
-        console.log('Error fallback distance:', roadDistance, 'km')
-        setDistance(roadDistance)
-        setDuration('Přibližně ' + Math.round(straightDistance * 1.3 / 80) + ' hodin')
-      }
+      console.error('Error with OSRM routing:', error)
+    }
+
+    // Fallback to straight-line distance with road approximation
+    try {
+      const straightDistance = calculateStraightLineDistance(fromCoordinates, toCoordinates)
+      const roadDistance = Math.round(straightDistance * 1.3) // Add 30% for road distance approximation
+      const estimatedDuration = Math.round(roadDistance / 80 * 10) / 10 // Average 80 km/h, round to 1 decimal
+
+      console.log('Fallback distance:', roadDistance, 'km, duration:', estimatedDuration, 'hours')
+      setDistance(roadDistance)
+      setDuration(`Přibližně ${estimatedDuration} hodin`)
+    } catch (error) {
+      console.error('Error calculating fallback distance:', error)
+    } finally {
       setIsCalculatingDistance(false)
     }
   }
@@ -348,24 +299,24 @@ export function Calculator() {
   ]
 
   const fullTruckOptions = [
-    { 
-      id: 'van-tarpaulin', 
-      name: 'Dodávka s plachtou', 
-      price: 4500, 
+    {
+      id: 'van-tarpaulin',
+      name: 'Dodávka s plachtou',
+      price: 4500,
       capacity: '3500kg',
       icon: '🚐'
     },
-    { 
-      id: 'hardox-truck', 
-      name: 'Nákladák Hardox', 
-      price: 7500, 
+    {
+      id: 'hardox-truck',
+      name: 'Nákladák Hardox',
+      price: 7500,
       capacity: '15000kg',
       icon: '🚛'
     },
-    { 
-      id: 'truck-tarpaulin', 
-      name: 'Nákladák s plachtou', 
-      price: 6500, 
+    {
+      id: 'truck-tarpaulin',
+      name: 'Nákladák s plachtou',
+      price: 6500,
       capacity: '12000kg',
       icon: '🚚'
     },
@@ -496,7 +447,7 @@ export function Calculator() {
                   ))}
                 </RadioGroup>
               </div>
-              
+
               <div className="border-t pt-4">
                 <Label className="text-base font-semibold mb-3 block">Nebo standardní vozidla</Label>
                 <RadioGroup value={vehicleType} onValueChange={setVehicleType}>
@@ -724,10 +675,3 @@ export function Calculator() {
     </div>
   )
 }
-
-
-
-
-
-
-
