@@ -382,7 +382,7 @@ export function Calculator() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="font-medium">Vzdálenost:</span>
-                    <span className="ml-2 text-lg font-bold text-primary">{distance} km</span>
+                    <span className="ml-2 text-lg font-bold text-primary">Přibližně {distance} km</span>
                   </div>
                   <div>
                     <span className="font-medium">Doba jízdy:</span>
@@ -606,7 +606,7 @@ export function Calculator() {
             {distance && (
               <div className="flex justify-between items-center py-2 border-t pt-4">
                 <span className="text-gray-600">Vzdálenost</span>
-                <span className="font-semibold">{distance} km</span>
+                <span className="font-semibold">Přibližně {distance} km</span>
               </div>
             )}
             {firstName && (
