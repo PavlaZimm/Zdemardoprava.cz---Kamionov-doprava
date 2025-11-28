@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Route, Calculator as CalcIcon } from 'lucide-react'
+import { toast } from 'sonner'
 
 export function Calculator() {
   const [fromLocation, setFromLocation] = useState('')
@@ -646,26 +647,54 @@ export function Calculator() {
               </div>
             )}
           </div>
-          <Button onClick={() => {
-            const orderData = {
-              fromLocation,
-              toLocation,
-              distance,
-              cargoType,
-              vehicleType,
-              fullTruckType,
-              pickupDate,
-              firstName,
-              lastName,
-              companyName,
-              phone,
-              email,
-              address
-            }
-            console.log('Order submitted:', orderData)
-            // Here you would send to backend
-          }} className="w-full bg-accent hover:bg-accent/90 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
-            Odeslat
+          <Button
+            onClick={() => {
+              // Validace základních údajů
+              if (!fromLocation || !toLocation) {
+                toast.error('Vyplňte prosím trasu (odkud a kam)')
+                return
+              }
+
+              if (!phone && !email) {
+                toast.error('Vyplňte prosím telefon nebo email')
+                return
+              }
+
+              const orderData = {
+                fromLocation,
+                toLocation,
+                distance,
+                cargoType,
+                vehicleType,
+                fullTruckType,
+                pickupDate,
+                firstName,
+                lastName,
+                companyName,
+                phone,
+                email,
+                address
+              }
+
+              console.log('Order submitted:', orderData)
+
+              // Zobrazení úspěšné zprávy
+              toast.success('Poptávka odeslána!', {
+                description: 'Zavoláme vám co nejdříve na ' + (phone || email),
+                duration: 5000,
+              })
+
+              // Otevření WhatsApp s předvyplněnou zprávou
+              const message = `Dobrý den, mám zájem o přepravu:\n- Z: ${fromLocation}\n- Do: ${toLocation}${distance ? `\n- Vzdálenost: ${distance} km` : ''}\n- Jméno: ${firstName} ${lastName}\n- Telefon: ${phone}`
+              const whatsappUrl = `https://api.whatsapp.com/send?phone=420725215531&text=${encodeURIComponent(message)}`
+
+              setTimeout(() => {
+                window.open(whatsappUrl, '_blank')
+              }, 1000)
+            }}
+            className="w-full bg-accent hover:bg-accent/90 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
+          >
+            Odeslat poptávku
           </Button>
           <p className="text-xs text-gray-500 text-center mt-4">
             Odesláním objednávky souhlasíte s obchodními podmínkami a podmínkami pro ochranu osobních údajů
