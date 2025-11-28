@@ -180,12 +180,9 @@ export function MapLocationPicker({ value, onChange, placeholder, buttonText }: 
     return () => clearTimeout(timer)
   }, [searchValue])
 
-  // Load Leaflet CSS
+  // Fix for default marker icon in Leaflet
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      import('leaflet/dist/leaflet.css')
-
-      // Fix for default marker icon
       import('leaflet').then((L) => {
         delete (L.Icon.Default.prototype as any)._getIconUrl
         L.Icon.Default.mergeOptions({
