@@ -648,14 +648,20 @@ export function Calculator() {
             )}
           </div>
           <Button
-            onClick={() => {
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              console.log('Button clicked!')
+
               // Validace základních údajů
               if (!fromLocation || !toLocation) {
+                console.log('Missing route')
                 toast.error('Vyplňte prosím trasu (odkud a kam)')
                 return
               }
 
               if (!phone && !email) {
+                console.log('Missing contact')
                 toast.error('Vyplňte prosím telefon nebo email')
                 return
               }
@@ -688,6 +694,7 @@ export function Calculator() {
               const message = `Dobrý den, mám zájem o přepravu:\n- Z: ${fromLocation}\n- Do: ${toLocation}${distance ? `\n- Vzdálenost: ${distance} km` : ''}\n- Jméno: ${firstName} ${lastName}\n- Telefon: ${phone}`
               const whatsappUrl = `https://api.whatsapp.com/send?phone=420725215531&text=${encodeURIComponent(message)}`
 
+              console.log('Opening WhatsApp:', whatsappUrl)
               setTimeout(() => {
                 window.open(whatsappUrl, '_blank')
               }, 1000)
