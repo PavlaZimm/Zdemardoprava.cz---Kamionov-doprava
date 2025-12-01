@@ -3,6 +3,7 @@
 
 import { Calculator } from '@/components/calculator'
 import { ServicesSection } from '@/components/services-section'
+import { FleetSection } from '@/components/fleet-section'
 import { TestimonialsSection } from '@/components/testimonials-section'
 import { Footer } from '@/components/footer'
 
@@ -18,6 +19,7 @@ export default function Home() {
               <nav className="hidden lg:flex space-x-6" role="navigation" aria-label="Hlavní navigace">
                 <a href="#calculator" className="text-muted-foreground hover:text-primary transition-colors">Kalkulátor</a>
                 <a href="#services" className="text-muted-foreground hover:text-primary transition-colors">Služby</a>
+                <a href="#fleet" className="text-muted-foreground hover:text-primary transition-colors">Vozový park</a>
                 <a href="#testimonials" className="text-muted-foreground hover:text-primary transition-colors">Recenze</a>
                 <a href="#contact" className="text-muted-foreground hover:text-primary transition-colors">Kontakt</a>
               </nav>
@@ -71,8 +73,15 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Fleet Section */}
+      <section id="fleet" className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <FleetSection />
+        </div>
+      </section>
+
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-16 bg-white">
+      <section id="testimonials" className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <TestimonialsSection />
         </div>
