@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -19,7 +20,6 @@ export function Calculator() {
   const [duration, setDuration] = useState<string | null>(null)
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false)
   const [cargoType, setCargoType] = useState('')
-  const [vehicleType, setVehicleType] = useState('')
   const [fullTruckType, setFullTruckType] = useState('')
   const [pickupDate, setPickupDate] = useState('')
   const [firstName, setFirstName] = useState('')
@@ -28,6 +28,7 @@ export function Calculator() {
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [address, setAddress] = useState('')
+  const [note, setNote] = useState('')
   const [isGeocodingFrom, setIsGeocodingFrom] = useState(false)
   const [isGeocodingTo, setIsGeocodingTo] = useState(false)
 
@@ -289,42 +290,67 @@ export function Calculator() {
   }
 
   const cargoOptions = [
-    { id: 'small', name: 'Přepravit náklad sypký', description: 'menší náklady, balíky' },
-    { id: 'medium', name: 'Přepravit náklad balený', description: 'střední náklady, palety' },
-  ]
-
-  const vehicleOptions = [
-    { id: 'small-truck', name: 'Malý kamion 7.5t', price: 3500, capacity: '7500kg' },
-    { id: 'medium-truck', name: 'Střední kamion 12t', price: 5500, capacity: '12000kg' },
-    { id: 'large-truck', name: 'Velký kamion 24t', price: 8500, capacity: '24000kg' },
+    {
+      id: 'small',
+      name: 'Přepravit náklad sypký',
+      description: 'Sypký materiál',
+      details: 'Volně ložený – např. zemědělské produkty, stavební či kovový materiál, uhlí, energetické suroviny nebo průmyslově sypký materiál.'
+    },
+    {
+      id: 'medium',
+      name: 'Přepravit náklad balený',
+      description: 'Balený materiál',
+      details: 'Balený i kusový náklad – paletovaný, v big-bag pytlích, i velkoobjemový.'
+    },
   ]
 
   const fullTruckOptions = [
     {
-      id: 'van-tarpaulin',
-      name: 'Dodávka s plachtou',
-      price: 4500,
-      capacity: '3500kg',
-      icon: '🚐'
+      id: 'semi-tipper-back',
+      name: 'Návěs se sklápěním dozadu',
+      price: 8500,
+      capacity: '24000kg',
+      icon: '🚛'
     },
     {
-      id: 'hardox-truck',
-      name: 'Nákladák Hardox',
+      id: 'walking-floor',
+      name: 'Návěs s posuvnou podlahou (walking floor)',
+      price: 9000,
+      capacity: '24000kg',
+      icon: '🚛'
+    },
+    {
+      id: 'hardox',
+      name: 'Hardox',
       price: 7500,
       capacity: '15000kg',
       icon: '🚛'
     },
     {
-      id: 'truck-tarpaulin',
-      name: 'Nákladák s plachtou',
-      price: 6500,
-      capacity: '12000kg',
-      icon: '🚚'
+      id: 'van-tarpaulin',
+      name: 'Dodávka do 3,5t se zaplachtovanou korbou',
+      price: 2500,
+      capacity: '3500kg',
+      icon: '🚐'
+    },
+    {
+      id: 'standard-tarpaulin',
+      name: 'Plachtový návěs standard',
+      price: 7000,
+      capacity: '24000kg',
+      icon: '🚛'
+    },
+    {
+      id: 'mega-tarpaulin',
+      name: 'Plachtový návěs "Mega"',
+      price: 8000,
+      capacity: '24000kg',
+      icon: '🚛'
     },
   ]
 
   // Calculate final price with distance multiplier
-  const basePrice = cargoType ? 0 : fullTruckType ? fullTruckOptions.find(v => v.id === fullTruckType)?.price || 0 : vehicleType ? vehicleOptions.find(v => v.id === vehicleType)?.price || 0 : 0
+  const basePrice = cargoType ? 0 : fullTruckType ? fullTruckOptions.find(v => v.id === fullTruckType)?.price || 0 : 0
   const finalPrice = Math.round(basePrice * getDistanceMultiplier())
 
   return (
@@ -413,7 +439,8 @@ export function Calculator() {
                     <Label htmlFor={option.id} className="font-semibold cursor-pointer text-base">
                       {option.name}
                     </Label>
-                    <p className="text-sm text-gray-600">{option.description}</p>
+                    <p className="text-sm font-medium text-gray-700">{option.description}</p>
+                    <p className="text-xs text-gray-500 mt-1">{option.details}</p>
                   </div>
                 </div>
               ))}
@@ -424,48 +451,25 @@ export function Calculator() {
         {/* Vehicle Selection */}
         <Card className="hover:shadow-lg transition-shadow duration-200">
           <CardHeader>
-            <CardTitle className="text-xl">Objednat celý kamion</CardTitle>
-            <p className="text-sm text-gray-600">Využijte kapacitu celého kamionu</p>
+            <CardTitle className="text-xl">Volba typu vozu</CardTitle>
+            <p className="text-sm text-gray-600">Vyberte vhodný typ vozidla pro váš náklad</p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div>
-                <Label className="text-base font-semibold mb-3 block">Vyberte auto</Label>
-                <RadioGroup value={fullTruckType} onValueChange={setFullTruckType}>
-                  {fullTruckOptions.map((option) => (
-                    <div key={option.id} className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 hover:border-blue-200 transition-all duration-200 cursor-pointer">
-                      <RadioGroupItem value={option.id} id={option.id} />
-                      <div className="flex items-center space-x-3 flex-1">
-                        <span className="text-2xl">{option.icon}</span>
-                        <div className="flex-1">
-                          <Label htmlFor={option.id} className="font-semibold cursor-pointer text-base">
-                            {option.name}
-                          </Label>
-                          <p className="text-sm text-gray-600">Nosnost: {option.capacity}</p>
-                        </div>
-                      </div>
+            <RadioGroup value={fullTruckType} onValueChange={setFullTruckType}>
+              {fullTruckOptions.map((option) => (
+                <div key={option.id} className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 hover:border-blue-200 transition-all duration-200 cursor-pointer">
+                  <RadioGroupItem value={option.id} id={option.id} />
+                  <div className="flex items-center space-x-3 flex-1">
+                    <span className="text-2xl">{option.icon}</span>
+                    <div className="flex-1">
+                      <Label htmlFor={option.id} className="font-semibold cursor-pointer text-base">
+                        {option.name}
+                      </Label>
                     </div>
-                  ))}
-                </RadioGroup>
-              </div>
-
-              <div className="border-t pt-4">
-                <Label className="text-base font-semibold mb-3 block">Nebo standardní vozidla</Label>
-                <RadioGroup value={vehicleType} onValueChange={setVehicleType}>
-                  {vehicleOptions.map((option) => (
-                    <div key={option.id} className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 hover:border-blue-200 transition-all duration-200 cursor-pointer">
-                      <RadioGroupItem value={option.id} id={option.id} />
-                      <div className="flex-1">
-                        <Label htmlFor={option.id} className="font-semibold cursor-pointer text-base">
-                          {option.name}
-                        </Label>
-                        <p className="text-sm text-gray-600">Nosnost: {option.capacity}</p>
-                      </div>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-            </div>
+                  </div>
+                </div>
+              ))}
+            </RadioGroup>
           </CardContent>
         </Card>
       </div>
@@ -482,9 +486,6 @@ export function Calculator() {
               value={pickupDate}
               onChange={(e) => setPickupDate(e.target.value)}
             />
-            <p className="text-sm text-gray-600 mt-2">
-              Standardní termín do 24 hodin nebo expresní přeprava
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -535,7 +536,7 @@ export function Calculator() {
               />
             </div>
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
                 type="email"
@@ -552,6 +553,16 @@ export function Calculator() {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               required
+            />
+          </div>
+          <div>
+            <Label htmlFor="note">Poznámka</Label>
+            <Textarea
+              id="note"
+              placeholder="Nepovinné. Můžete stručně popsat náklad."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={3}
             />
           </div>
         </CardContent>
@@ -581,12 +592,6 @@ export function Calculator() {
               <div className="flex justify-between items-center py-2">
                 <span className="text-gray-600">Typ nákladu</span>
                 <span className="font-semibold">{cargoOptions.find(c => c.id === cargoType)?.name}</span>
-              </div>
-            )}
-            {vehicleType && (
-              <div className="flex justify-between items-center py-2">
-                <span className="text-gray-600">Typ vozidla</span>
-                <span className="font-semibold">{vehicleOptions.find(v => v.id === vehicleType)?.name}</span>
               </div>
             )}
             {fullTruckType && (
@@ -665,7 +670,6 @@ export function Calculator() {
                 toLocation,
                 distance,
                 cargoType,
-                vehicleType,
                 fullTruckType,
                 pickupDate,
                 firstName,
@@ -673,7 +677,8 @@ export function Calculator() {
                 companyName,
                 phone,
                 email,
-                address
+                address,
+                note
               }
 
               console.log('Order submitted:', orderData)
@@ -697,7 +702,7 @@ export function Calculator() {
             Odeslat poptávku
           </Button>
           <p className="text-xs text-gray-500 text-center mt-4">
-            Odesláním objednávky souhlasíte s obchodními podmínkami a podmínkami pro ochranu osobních údajů
+            Odesláním objednávky souhlasíte s podmínkami pro ochranu osobních údajů
           </p>
         </CardContent>
       </Card>
