@@ -1,4 +1,4 @@
-import { Phone, Mail, MessageCircle } from 'lucide-react'
+import { Phone, Mail } from 'lucide-react'
 
 export function Footer() {
   return (
@@ -35,14 +35,8 @@ export function Footer() {
                   info@zdemar.cz
                 </a>
               </div>
-              <div className="flex items-center space-x-3">
-                <MessageCircle className="w-5 h-5 text-primary" />
-                <a href="https://api.whatsapp.com/send?phone=420725215531" className="text-primary hover:text-primary/80 transition-colors">
-                  WhatsApp
-                </a>
-              </div>
               <div className="text-sm text-gray-400 space-y-1 mt-4">
-                <p>ZDEMAR Ústí nad Labem s.r.o.</p>
+                <p>ZDM Czech s.r.o.</p>
                 <p>Smetanova 683</p>
                 <p>403 17 Chabařovice</p>
                 <p>Česká republika</p>
@@ -50,13 +44,6 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Links */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Odkazy</h4>
-            <div className="space-y-2">
-              <a href="https://www.zdemar.cz/kariera" className="block text-gray-300 hover:text-white transition-colors">Kariéra</a>
-            </div>
-          </div>
         </div>
 
         {/* Company Details */}
@@ -65,7 +52,7 @@ export function Footer() {
             <div>
               <h5 className="font-semibold mb-2">Fakturační údaje</h5>
               <div className="text-sm text-gray-400 space-y-1">
-                <p>ZDEMAR Ústí nad Labem s.r.o.</p>
+                <p>ZDM Czech s.r.o.</p>
                 <p>Smetanova 683</p>
                 <p>403 17 Chabařovice</p>
                 <p>Česká republika</p>

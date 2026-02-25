@@ -24,6 +24,7 @@ const nextConfig = {
     preloadEntriesOnStart: false,
     webpackMemoryOptimizations: true,
   },
+  turbopack: {},
   webpack: (config, { dev, isServer }) => {
     // Apply macaly-tagger in development for both client and server
     if (dev) {
