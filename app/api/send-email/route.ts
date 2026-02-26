@@ -48,8 +48,9 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Email error:', error)
-    return NextResponse.json({ error: 'Nepodařilo se odeslat email' }, { status: 500 })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('Email error:', message)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
