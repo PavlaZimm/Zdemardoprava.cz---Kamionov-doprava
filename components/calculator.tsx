@@ -681,7 +681,12 @@ export function Calculator() {
                 note
               }
 
-              console.log('Order submitted:', orderData)
+              // Odeslání emailu
+              fetch('/api/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData),
+              }).catch(() => {})
 
               // Zobrazení úspěšné zprávy
               toast.success('Poptávka odeslána!', {
