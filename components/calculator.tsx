@@ -290,10 +290,17 @@ export function Calculator() {
       icon: '🚛'
     },
     {
-      id: 'walking-floor-hardox',
-      name: 'Návěs s posuvnou podlahou (walking floor) Hardox',
+      id: 'walking-floor',
+      name: 'Návěs s posuvnou podlahou (walking floor)',
       price: 9000,
       capacity: '24000kg',
+      icon: '🚛'
+    },
+    {
+      id: 'hardox',
+      name: 'Hardox',
+      price: 7500,
+      capacity: '15000kg',
       icon: '🚛'
     },
     {
