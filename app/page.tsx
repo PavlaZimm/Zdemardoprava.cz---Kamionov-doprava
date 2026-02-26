@@ -19,8 +19,8 @@ export default function Home() {
               <h1 className="text-2xl font-bold text-primary">Zdemardoprava.cz</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <a href="tel:+420725215531" className="text-accent font-semibold hover:text-accent/80 transition-colors" aria-label="Zavolat na číslo 725 215 531">
-                725 215 531
+              <a href="tel:+420725215531" className="text-accent font-semibold hover:text-accent/80 transition-colors" aria-label="Zavolat na číslo +420 725 215 531">
+                +420 725 215 531
               </a>
             </div>
           </div>

@@ -110,23 +110,18 @@ export function Calculator() {
       'mnichov': { lat: 48.1351, lng: 11.5820 }
     }
 
-    console.log('Looking for coordinates for:', lowerAddress)
-
     // Try exact match first
     if (cityCoordinates[lowerAddress]) {
-      console.log('Found exact match:', cityCoordinates[lowerAddress])
       return cityCoordinates[lowerAddress]
     }
 
     // Try to find a match by checking if any city name is contained in the address
     for (const [city, coords] of Object.entries(cityCoordinates)) {
       if (lowerAddress.includes(city) || city.includes(lowerAddress)) {
-        console.log('Found partial match:', city, coords)
         return coords
       }
     }
 
-    console.log('No coordinates found in hardcoded list for:', lowerAddress)
     return null
   }
 
@@ -139,14 +134,11 @@ export function Calculator() {
       const data = await response.json()
 
       if (data && data.length > 0) {
-        const coords = {
+        return {
           lat: parseFloat(data[0].lat),
           lng: parseFloat(data[0].lon)
         }
-        console.log('Geocoded address:', address, 'to:', coords)
-        return coords
       } else {
-        console.log('Geocoding failed for:', address)
         return null
       }
     } catch (error) {
@@ -155,66 +147,58 @@ export function Calculator() {
     }
   }
 
-  // Auto-detect coordinates when user types in address fields
+  // Auto-detect coordinates when user types in address fields (debounced 500ms)
   useEffect(() => {
-    console.log('FROM location changed:', fromLocation, 'length:', fromLocation?.length)
-    if (fromLocation && fromLocation.length > 2) {
-      const coords = getCoordinatesForCity(fromLocation)
-      if (coords && (!fromCoordinates || fromCoordinates.lat !== coords.lat)) {
-        console.log('Setting FROM coordinates from hardcoded list:', fromLocation, coords)
-        setFromCoordinates(coords)
-        setIsGeocodingFrom(false)
-      } else if (!coords) {
-        // Try geocoding
-        console.log('No hardcoded coords, trying geocoding for FROM:', fromLocation)
-        setIsGeocodingFrom(true)
-        geocodeAddress(fromLocation).then((geocodedCoords) => {
-          if (geocodedCoords && (!fromCoordinates || fromCoordinates.lat !== geocodedCoords.lat)) {
-            console.log('Setting FROM coordinates from geocoding:', fromLocation, geocodedCoords)
-            setFromCoordinates(geocodedCoords)
-          }
+    const timer = setTimeout(() => {
+      if (fromLocation && fromLocation.length > 2) {
+        const coords = getCoordinatesForCity(fromLocation)
+        if (coords) {
+          setFromCoordinates(coords)
           setIsGeocodingFrom(false)
-        })
+        } else {
+          setIsGeocodingFrom(true)
+          geocodeAddress(fromLocation).then((geocodedCoords) => {
+            if (geocodedCoords) {
+              setFromCoordinates(geocodedCoords)
+            }
+            setIsGeocodingFrom(false)
+          })
+        }
+      } else {
+        setFromCoordinates(null)
+        setIsGeocodingFrom(false)
       }
-    } else if (fromLocation && fromLocation.length <= 2) {
-      console.log('FROM location too short, clearing coordinates')
-      setFromCoordinates(null)
-      setIsGeocodingFrom(false)
-    }
+    }, 500)
+    return () => clearTimeout(timer)
   }, [fromLocation])
 
   useEffect(() => {
-    console.log('TO location changed:', toLocation, 'length:', toLocation?.length)
-    if (toLocation && toLocation.length > 2) {
-      const coords = getCoordinatesForCity(toLocation)
-      if (coords && (!toCoordinates || toCoordinates.lat !== coords.lat)) {
-        console.log('Setting TO coordinates from hardcoded list:', toLocation, coords)
-        setToCoordinates(coords)
-        setIsGeocodingTo(false)
-      } else if (!coords) {
-        // Try geocoding
-        console.log('No hardcoded coords, trying geocoding for TO:', toLocation)
-        setIsGeocodingTo(true)
-        geocodeAddress(toLocation).then((geocodedCoords) => {
-          if (geocodedCoords && (!toCoordinates || toCoordinates.lat !== geocodedCoords.lat)) {
-            console.log('Setting TO coordinates from geocoding:', toLocation, geocodedCoords)
-            setToCoordinates(geocodedCoords)
-          }
+    const timer = setTimeout(() => {
+      if (toLocation && toLocation.length > 2) {
+        const coords = getCoordinatesForCity(toLocation)
+        if (coords) {
+          setToCoordinates(coords)
           setIsGeocodingTo(false)
-        })
+        } else {
+          setIsGeocodingTo(true)
+          geocodeAddress(toLocation).then((geocodedCoords) => {
+            if (geocodedCoords) {
+              setToCoordinates(geocodedCoords)
+            }
+            setIsGeocodingTo(false)
+          })
+        }
+      } else {
+        setToCoordinates(null)
+        setIsGeocodingTo(false)
       }
-    } else if (toLocation && toLocation.length <= 2) {
-      console.log('TO location too short, clearing coordinates')
-      setToCoordinates(null)
-      setIsGeocodingTo(false)
-    }
+    }, 500)
+    return () => clearTimeout(timer)
   }, [toLocation])
 
   // Calculate distance when both coordinates are available
   useEffect(() => {
-    console.log('Coordinates changed:', { fromCoordinates, toCoordinates })
     if (fromCoordinates && toCoordinates) {
-      console.log('Both coordinates available, calculating distance...')
       calculateDistance()
     }
   }, [fromCoordinates, toCoordinates])
@@ -225,45 +209,38 @@ export function Calculator() {
       return
     }
 
-    console.log('Starting distance calculation between:', fromCoordinates, 'and', toCoordinates)
     setIsCalculatingDistance(true)
 
     try {
       // Try using OSRM (Open Source Routing Machine) for real routing distance
       const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${fromCoordinates.lng},${fromCoordinates.lat};${toCoordinates.lng},${toCoordinates.lat}?overview=false`
 
-      console.log('Requesting OSRM routing...')
-      const response = await fetch(osrmUrl)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
+      const response = await fetch(osrmUrl, { signal: controller.signal })
+      clearTimeout(timeoutId)
       const data = await response.json()
 
       if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
         const route = data.routes[0]
         const distanceInKm = Math.round(route.distance / 1000)
-        const durationInHours = Math.round(route.duration / 3600 * 10) / 10 // Round to 1 decimal
-
-        console.log('OSRM distance:', distanceInKm, 'km, duration:', durationInHours, 'hours')
+        const durationInHours = Math.round(route.duration / 3600 * 10) / 10
         setDistance(distanceInKm)
         setDuration(`Přibližně ${durationInHours} hodin`)
         setIsCalculatingDistance(false)
         return
-      } else {
-        console.log('OSRM routing failed, falling back to straight-line distance')
       }
-    } catch (error) {
-      console.error('Error with OSRM routing:', error)
+    } catch {
+      // OSRM failed, fall through to fallback
     }
 
     // Fallback to straight-line distance with road approximation
     try {
       const straightDistance = calculateStraightLineDistance(fromCoordinates, toCoordinates)
-      const roadDistance = Math.round(straightDistance * 1.3) // Add 30% for road distance approximation
-      const estimatedDuration = Math.round(roadDistance / 80 * 10) / 10 // Average 80 km/h, round to 1 decimal
-
-      console.log('Fallback distance:', roadDistance, 'km, duration:', estimatedDuration, 'hours')
+      const roadDistance = Math.round(straightDistance * 1.3)
+      const estimatedDuration = Math.round(roadDistance / 80 * 10) / 10
       setDistance(roadDistance)
       setDuration(`Přibližně ${estimatedDuration} hodin`)
-    } catch (error) {
-      console.error('Error calculating fallback distance:', error)
     } finally {
       setIsCalculatingDistance(false)
     }
@@ -705,15 +682,6 @@ export function Calculator() {
           >
             Odeslat poptávku
           </Button>
-          <a
-            href={`https://api.whatsapp.com/send?phone=420774357790`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full flex items-center justify-center gap-2 border border-gray-300 text-gray-600 py-4 text-lg font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200"
-          >
-            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-green-500"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            Napsat přes WhatsApp
-          </a>
           <p className="text-xs text-gray-500 text-center mt-2">
             Odesláním objednávky souhlasíte s podmínkami pro ochranu osobních údajů
           </p>

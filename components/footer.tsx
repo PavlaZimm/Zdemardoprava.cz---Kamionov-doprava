@@ -24,7 +24,7 @@ export function Footer() {
                 <Phone className="w-5 h-5 text-accent" />
                 <div>
                   <a href="tel:+420725215531" className="text-accent hover:text-accent/80 transition-colors font-semibold">
-                    725 215 531
+                    +420 725 215 531
                   </a>
                   <p className="text-sm text-gray-400">Po - Pá: 16:00</p>
                 </div>
