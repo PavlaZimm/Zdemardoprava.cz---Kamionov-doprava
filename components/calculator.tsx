@@ -694,10 +694,11 @@ export function Calculator() {
                     duration: 5000,
                   })
                 } else {
-                  toast.error('Nepodařilo se odeslat poptávku, zkuste to znovu.')
+                  const body = await res.json().catch(() => ({}))
+                  toast.error('Chyba: ' + (body.error || res.status), { duration: 10000 })
                 }
-              } catch {
-                toast.error('Nepodařilo se odeslat poptávku, zkuste to znovu.')
+              } catch (e) {
+                toast.error('Chyba: ' + String(e), { duration: 10000 })
               }
             }}
             className="w-full bg-accent hover:bg-accent/90 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
