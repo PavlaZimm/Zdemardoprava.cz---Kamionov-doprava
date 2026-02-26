@@ -681,7 +681,12 @@ export function Calculator() {
                 note
               }
 
-              console.log('Order submitted:', orderData)
+              // Odeslání emailu
+              fetch('/api/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData),
+              }).catch(() => {})
 
               // Zobrazení úspěšné zprávy
               toast.success('Poptávka odeslána!', {
@@ -691,7 +696,7 @@ export function Calculator() {
 
               // Otevření WhatsApp s předvyplněnou zprávou
               const message = `Dobrý den, mám zájem o přepravu:\n- Z: ${fromLocation}\n- Do: ${toLocation}${distance ? `\n- Vzdálenost: ${distance} km` : ''}\n- Jméno: ${firstName} ${lastName}\n- Telefon: ${phone}`
-              const whatsappUrl = `https://api.whatsapp.com/send?phone=420725215531&text=${encodeURIComponent(message)}`
+              const whatsappUrl = `https://api.whatsapp.com/send?phone=420774357790&text=${encodeURIComponent(message)}`
 
               setTimeout(() => {
                 window.open(whatsappUrl, '_blank')
